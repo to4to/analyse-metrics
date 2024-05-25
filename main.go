@@ -1,6 +1,10 @@
 package main
 
-import "net/http"
+import (
+	"fmt"
+	"io"
+	"net/http"
+)
 
 
 
@@ -17,6 +21,14 @@ router.HandleFunc("POST /data",handleData)
 func handleData(w http.ResponseWriter, r *http.Request){
 
 
-	
+	b,err:=io.ReadAll(r.Body)
+
+
+	if err!=nil{
+		panic(err)
+	}
+
+	defer r.Body.Close()
+	fmt.Println(string(b))
 
 }
