@@ -46,8 +46,8 @@ func handleData(w http.ResponseWriter, r *http.Request) {
 			panic(err)
 		}
 
-		fmt.Println("%+v\n", data)
-		w.Write([]byte("Hello Cors"))
+		fmt.Printf("%+v\n", data)
+		//w.Write([]byte("Hello Cors"))
 	}
 }
 
