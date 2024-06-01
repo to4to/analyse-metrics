@@ -22,11 +22,19 @@ var pingCounter = prometheus.NewCounter(
 	},
 )
 
+var visitCounter = prometheus.NewCounterVec(
+	prometheus.CounterOpts{
+		Name: "visit_counter",
+		Help: "count of the visits",
+	},
+	[]string{"path", "bucketID"},
+)
+
 func main() {
 
 	router := http.NewServeMux()
 
-	prometheus.MustRegister(pingCounter)
+	prometheus.MustRegister(pingCounter, visitCounter)
 	router.Handle("/metrics", promhttp.Handler())
 	router.HandleFunc("/data", handleData)
 	http.ListenAndServe(":8080", router)
@@ -55,17 +63,23 @@ func handleData(w http.ResponseWriter, r *http.Request) {
 
 		fmt.Printf("%+v\n", data)
 		w.Write([]byte("Hello Cors"))
-		
+
 	}
 
+	visitCounter.With(
+		prometheus.Labels{
+			"path":     data.Path,
+			"bucketID": data.BucketID,
+		},
+	)
 	pingCounter.Inc()
 }
 
-// 	visitCounter.With(prometheus.Labels{
-// 		"path":     data.Path,
-// 		"bucketID": data.BucketID,
-// 	}).Inc()
-// }
+// visitCounter.With(prometheus.Labels{
+// 	"path":     data.Path,
+// 	"bucketID": data.BucketID,
+// }).Inc()
+
 // func init() {
 
 // 	registry := prometheus.NewRegistry()
