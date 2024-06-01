@@ -3,20 +3,34 @@ package main
 import (
 	"encoding/json"
 	"fmt"
-	
+
 	"net/http"
+
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
+)
+
+type Data struct {
+	Path     string
+	BucketID string
+}
+
+var pingCounter = prometheus.NewCounter(
+	prometheus.CounterOpts{
+		Name: "site_visits",
+		Help: "count of the visits",
+	},
 )
 
 func main() {
 
 	router := http.NewServeMux()
 
+	prometheus.MustRegister(pingCounter)
+	router.Handle("/metrics", promhttp.Handler())
 	router.HandleFunc("/data", handleData)
 	http.ListenAndServe(":8080", router)
 }
-
-
-
 
 func handleData(w http.ResponseWriter, r *http.Request) {
 	// Set CORS headers for all responses
@@ -29,10 +43,10 @@ func handleData(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
 		return
 	}
-
+	var data Data
 	// Handle POST request
 	if r.Method == "POST" {
-		var data Data
+
 		if err := json.NewDecoder(r.Body).Decode(&data); err != nil {
 			http.Error(w, err.Error(), http.StatusBadRequest)
 			return
@@ -41,13 +55,28 @@ func handleData(w http.ResponseWriter, r *http.Request) {
 
 		fmt.Printf("%+v\n", data)
 		w.Write([]byte("Hello Cors"))
+		
 	}
+
+	pingCounter.Inc()
 }
 
-type Data struct {
-	Path     string
-	BucketID string
-}
+// 	visitCounter.With(prometheus.Labels{
+// 		"path":     data.Path,
+// 		"bucketID": data.BucketID,
+// 	}).Inc()
+// }
+// func init() {
+
+// 	registry := prometheus.NewRegistry()
+
+// 	// Add go runtime metrics and process collectors.
+// 	registry.MustRegister(
+// 		visitCounter,
+// 		pingCounter,
+// 	)
+
+// }
 
 // func handleData(w http.ResponseWriter, r *http.Request) {
 // 	// Set CORS headers for all responses
@@ -105,3 +134,11 @@ type Data struct {
 // 		w.Write([]byte("Hello Cors"))
 // 	}
 // }
+
+// var visitCounter = prometheus.NewCounterVec(
+// 	prometheus.CounterOpts{
+// 		Name: "visits",
+// 		Help: "count of the visits",
+// 	},
+// 	[]string{"path", "bucketID"},
+// )
